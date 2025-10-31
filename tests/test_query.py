@@ -114,6 +114,24 @@ def test_scope_add_filter(site1, site2, post1, post2):
 
 
 @pytest.mark.django_db
+def test_scope_on_get(site1, site2, post1, post2):
+    with scope(site=site1):
+        assert get_scope() == {'site': site1, '_enabled': True}
+        assert Post.objects.get(pk=post1.pk) == post1
+        with pytest.raises(Post.DoesNotExist):
+            Post.objects.get(pk=post2.pk)
+
+
+@pytest.mark.django_db
+def test_scope_on_delete(site1, site2, post1, post2):
+    with scope(site=site1):
+        assert get_scope() == {'site': site1, '_enabled': True}
+        assert Post.objects.all().delete()
+    with scopes_disabled():
+        assert list(Post.objects.all()) == [post2]
+
+
+@pytest.mark.django_db
 def test_scope_keep_filter(site1, site2, post1, post2):
     with pytest.raises(ScopeError):
         Post.objects.all()
